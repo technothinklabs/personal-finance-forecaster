@@ -1,0 +1,23 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+.venv/
+env/
+venv/
+
+# Streamlit specific
+.streamlit/config.toml
+
+# Local data & saved models (Don't leak your actual finances!)
+data/
+*.csv
+*.joblib
+*.pkl
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store

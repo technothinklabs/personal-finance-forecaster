@@ -1,0 +1,9 @@
+**/.venv
+**/__pycache__
+.git
+.gitignore
+.dockerignore
+data/
+*.csv
+*.joblib
+*.pkl
