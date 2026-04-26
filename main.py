@@ -30,7 +30,45 @@ def get_forecast(df, steps=1):
     
     # Predict the next immediate step
     latest_features = df.iloc[-1:].drop(columns=['Date', 'Amount'])
-    return model.predict(latest_features)[0]
+    return model.predict(latest_features)[0], model
+
+def show_sidebar_insights(model, feature_names):
+    with st.sidebar:
+        st.header("🧠 Model Insights")
+        st.write("This section shows how the AI makes decisions.")
+        
+        # 1. Extract Feature Importance
+        # Access the regressor inside the pipeline
+        importances = model.named_steps['regressor'].feature_importances_
+        feature_df = pd.DataFrame({
+            'Feature': feature_names,
+            'Importance': importances
+        }).sort_values(by='Importance', ascending=False)
+
+        # 2. Display as a Horizontal Bar Chart
+        st.subheader("Key Spending Drivers")
+        fig_importance = px.bar(
+            feature_df, 
+            x='Importance', 
+            y='Feature', 
+            orientation='h',
+            title="What drives the forecast?",
+            color='Importance',
+            color_continuous_scale='Viridis'
+        )
+        fig_importance.update_layout(showlegend=False, height=300)
+        st.plotly_chart(fig_importance, width="stretch")
+
+        # 3. Model Parameters (Shows professionalism)
+        with st.expander("Model Configuration"):
+            params = model.named_steps['regressor'].get_params()
+            st.json({
+                "Algorithm": "Random Forest Regressor",
+                "n_estimators": params['n_estimators'],
+                "random_state": params['random_state']
+            })
+
+
 
 # 3. Streamlit UI
 st.set_page_config(page_title="Finance AI", layout="wide")
@@ -52,7 +90,7 @@ if uploaded_file:
     
     fig = px.line(plot_df, x='Date', y='Amount', title=f"{chart_freq} Spending Over Time",
                  line_shape="spline", render_mode="svg")
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     # --- PREDICTION SECTION ---
     st.divider()
@@ -60,17 +98,17 @@ if uploaded_file:
     
     # Daily Predict
     daily_df = prepare_time_series(raw_data, 'D')
-    next_day = get_forecast(daily_df)
+    next_day, model_daily = get_forecast(daily_df)
     col1.metric("Predicted Tomorrow", f"${next_day:,.2f}")
     
     # Weekly Predict
     weekly_df = prepare_time_series(raw_data, 'W')
-    next_week = get_forecast(weekly_df)
+    next_week, model_weekly = get_forecast(weekly_df)
     col2.metric("Predicted Next Week", f"${next_week:,.2f}")
     
     # Monthly Predict
     monthly_df = prepare_time_series(raw_data, 'ME')
-    next_month = get_forecast(monthly_df)
+    next_month, model_monthly = get_forecast(monthly_df)
     col3.metric("Predicted Next Month", f"${next_month:,.2f}")
 
     # --- CATEGORY BREAKDOWN ---
@@ -78,3 +116,9 @@ if uploaded_file:
     cat_df = raw_data.groupby('Category')['Amount'].sum().reset_index()
     fig_pie = px.pie(cat_df, values='Amount', names='Category', hole=0.4)
     st.plotly_chart(fig_pie)
+
+    # Define feature names for the chart
+    feature_cols = [col for col in daily_df.columns if col not in ['Date', 'Amount']]
+    
+    # Call the sidebar function
+    show_sidebar_insights(model_daily, feature_cols)
