@@ -14,5 +14,5 @@ An end-to-end Data Science project built with **Scikit-Learn** and **Streamlit**
 - Docker (Containerization)
 
 ## 📦 How to Run
-1. `pip install -e .`
-2. `streamlit run app.py`
+1. UV sync
+2. `streamlit run main.py`
